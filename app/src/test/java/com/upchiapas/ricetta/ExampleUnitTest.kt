@@ -1,4 +1,4 @@
-package com.example.ricetta
+package com.upchiapas.ricetta
 
 import org.junit.Test
 

@@ -1,24 +1,31 @@
-# Recetario
+# Ricetta
 
-Aplicación Android académica de la Unidad 3. Etapa 1: base Compose y pantalla temporal con Navigation Compose. No implementa todavía autenticación, backend ni CRUD.
+Aplicación Android de la Unidad 3 de Desarrollo de Aplicaciones Móviles. Dominio académico: Recetario. Recurso principal: Receta. Objetivo final: autenticación y CRUD contra una API REST, con MVVM y Clean Architecture ligera.
 
-## Entorno
-Un módulo `app`, Kotlin integrado en AGP 9.5.1, plugin Compose 2.2.10, BOM Compose 2026.02.01, Navigation Compose 2.10.2, Gradle Wrapper 9.6.0. SDK mínimo 26; compile/target 37. Java del terminal 21; el daemon Gradle solicita toolchain JDK 25 mediante gradle/gradle-daemon-jvm.properties.
+## Base actual
+Etapa 2: normalización de identidad. Paquete principal y applicationId: `com.upchiapas.ricetta`. Un módulo `app`, MainActivity, Navigation Compose y pantalla temporal. Tema Material 3 conservado. Sin backend, autenticación ni CRUD. Diseño definitivo pendiente de mockups Figma.
 
-## Ejecutar
-Abrir en Android Studio, sincronizar Gradle y ejecutar app. Configurar el SDK en local.properties (no versionado).
-Verificación: `./gradlew.bat assembleDebug testDebugUnitTest`.
+## Tecnologías y ejecución
+Kotlin integrado en AGP 9.5.1; plugin Compose 2.2.10; BOM 2026.02.01; Navigation Compose 2.10.2; Gradle Wrapper 9.6.0. minSdk 26; compile/target 37. Java del terminal 21; daemon Gradle configurado para JDK 25.
+
+Abrir en Android Studio, configurar SDK en `local.properties` (excluido de Git), sincronizar y ejecutar `app`.
+
+```powershell
+.\gradlew.bat assembleDebug testDebugUnitTest --console=plain
+.\gradlew.bat lintDebug --console=plain
+```
 
 ## Organización
-- presentation: navegación y pantalla temporal.
-- core: configuración compartida, red, sesión y contenedor en etapas posteriores.
-- domain: modelos y contratos en etapas posteriores.
-- data: servicios, DTOs, mappers y repositorios en etapas posteriores.
+- `presentation`: navegación, pantalla temporal y tema.
+- `core` (futuro): configuración, red, sesión y contenedor.
+- `domain` (futuro): modelos y contratos de repositorios.
+- `data` (futuro): servicios, DTOs, mappers y repositorios concretos.
 
-No se crean clases vacías ni archivos de infraestructura futura. Se conservan los recursos válidos de la plantilla. Las rutas físicas heredadas de la plantilla no determinan el namespace de Kotlin.
+Las capas futuras se documentan sin crear clases ficticias. Los tests existentes son los de la plantilla; el test aritmético no demuestra requisitos funcionales.
 
-## Alcance y pendientes
-Los PDF oficiales no se encontraron en el workspace; se usan los requisitos transcritos por el usuario.
-Ningún criterio de la rúbrica está declarado LOGRADO. El test aritmético heredado solo comprueba la infraestructura JUnit.
-Antes de implementar el dominio se requiere verificar su registro con el docente.
-La etapa 2 requiere revisión del informe y autorización explícita.
+## Limitaciones
+PDF oficiales ausentes: se usan los requisitos transcritos. Ningún criterio académico se declara LOGRADO. Verificación de etapa 2: sincronización, assembleDebug, testDebugUnitTest y lintDebug aprobados. AVD Pixel_10_Pro_XL: `unauthorized` se resolvió reiniciando el servidor con `adb kill-server` y `adb start-server`. Instalación, apertura y pantalla temporal verificadas en vertical y horizontal, sin cierre observado. No se borraron datos del AVD.
+
+El registro previo del daemon Kotlin señala conflicto de caché incremental (`lookups.tab` ya registrado), sin evidencia suficiente para atribuirlo a memoria o JDK. No se reprodujo durante esta etapa; compilación Kotlin y verificaciones posteriores aprobaron sin modificar versiones ni configuración del daemon.
+
+La API REST requiere revisión de esta etapa, autorización explícita, confirmación del dominio con el docente y definición del contrato JSON y persistencia.

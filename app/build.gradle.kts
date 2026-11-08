@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.upchiapas.recetario"
+    namespace = "com.upchiapas.ricetta"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.upchiapas.recetario"
+        applicationId = "com.upchiapas.ricetta"
         minSdk = 26
         targetSdk = 37
         versionCode = 1

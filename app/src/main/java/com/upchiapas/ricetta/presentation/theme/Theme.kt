@@ -1,4 +1,4 @@
-package com.example.ricetta.ui.theme
+package com.upchiapas.ricetta.presentation.theme
 
 import android.app.Activity
 import android.os.Build

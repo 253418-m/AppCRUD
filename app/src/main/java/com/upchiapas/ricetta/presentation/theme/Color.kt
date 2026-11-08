@@ -1,4 +1,4 @@
-package com.example.ricetta.ui.theme
+package com.upchiapas.ricetta.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 

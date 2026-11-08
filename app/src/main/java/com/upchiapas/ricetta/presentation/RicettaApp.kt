@@ -1,4 +1,4 @@
-package com.upchiapas.recetario.presentation
+package com.upchiapas.ricetta.presentation
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -13,7 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 
 @Composable
-fun RecetarioApp() {
+fun RicettaApp() {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "welcome") {
         composable("welcome") { WelcomeScreen() }
@@ -32,7 +32,7 @@ private fun WelcomeScreen() {
                     .verticalScroll(rememberScrollState()).padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text("Recetario", style = MaterialTheme.typography.headlineLarge)
+                Text("Ricetta", style = MaterialTheme.typography.headlineLarge)
                 Text("Tu espacio personal para organizar recetas.",
                     style = MaterialTheme.typography.titleMedium)
                 Card {
