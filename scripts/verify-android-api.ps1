@@ -1,6 +1,7 @@
 param(
     [int]$Port = 18080,
     [switch]$UseAdbReverse,
+    [switch]$PauseForVisualReview,
     [string]$Serial = "emulator-5554",
     [string]$AdbPath = "$env:LOCALAPPDATA/Android/Sdk/platform-tools/adb.exe"
 )
@@ -61,9 +62,13 @@ try {
     $docs = Invoke-WebRequest "http://127.0.0.1:$Port/docs" -UseBasicParsing -TimeoutSec 3
     if ($docs.StatusCode -ne 200) { throw "/docs no disponible" }
     Write-Host "FastAPI real y OpenAPI disponibles; base SQLite temporal aislada."
-    & (Join-Path $repo "gradlew.bat") "-p" $repo "connectedDebugAndroidTest" "-Pandroid.testInstrumentationRunnerArguments.fastApiBaseUrl=$baseUrl" "--console=plain"
+    & (Join-Path $repo "gradlew.bat") "-p" $repo "connectedDebugAndroidTest" "-Pricetta.debugBaseUrl=$baseUrl" "-Pandroid.testInstrumentationRunnerArguments.fastApiBaseUrl=$baseUrl" "--console=plain"
     if ($LASTEXITCODE -ne 0) { throw "Fallaron las pruebas instrumentadas." }
     Write-Host "Integración Android/FastAPI aprobada."
+    if ($PauseForVisualReview) {
+        Write-Host "Servidor temporal disponible para revisión visual. Enter finaliza y limpia los datos."
+        Read-Host | Out-Null
+    }
 } finally {
     if ($null -ne $server) {
         if (-not $server.HasExited) {

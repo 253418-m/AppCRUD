@@ -1,5 +1,7 @@
 # Capa de datos Android — etapa 4
 
+Este documento conserva el alcance y la evidencia de la etapa 4. La presentación de autenticación añadida en la etapa 5 reutiliza esta infraestructura; su arquitectura, mockups y verificación se describen en [Autenticación MVVM](authentication.md). En etapa 5 se agregan las dependencias Lifecycle de presentación con la versión 2.6.1 del catálogo y se corrige únicamente Espresso a 3.7.0 por compatibilidad de las pruebas con InputManager. Los resultados de etapa 4 que figuran abajo se conservan como evidencia histórica; la ejecución de etapa 5 registra 67 pruebas JVM y 14 instrumentadas aprobadas, sincronización/compilación/lint finales aprobados y restauración de sesión tras reiniciar el proceso de MainActivity verificada manualmente.
+
 ## Alcance e identidad
 
 Paquete `com.upchiapas.ricetta`, un módulo `app`. Se conserva MainActivity, la pantalla temporal, el tema y Navigation Compose. No se implementan ViewModels, pantallas de autenticación/CRUD ni navegación de sesión. El backend de la etapa 3 no se modifica.
@@ -44,7 +46,7 @@ SessionStorage ofrece getToken, hasSession, saveToken y clearToken. `hasSession`
 
 SharedPreferencesSessionStorage utiliza el archivo privado `ricetta_session.xml`. Las escrituras y borrados usan commit en IO y comprueban su resultado; no se usa la extensión KTX porque oculta ese booleano. Un fallo de persistencia es Storage. No se guardan contraseñas.
 
-Después de registrar/iniciar sesión, AuthRepository valida y mapea la respuesta antes de guardar el token. Un login fallido conserva la sesión anterior. Cerrar sesión elimina el token; limpiar la navegación y restaurar sesión desde UI corresponde a otra etapa.
+Después de registrar/iniciar sesión, AuthRepository valida y mapea la respuesta antes de guardar el token. Un login fallido conserva la sesión anterior. Cerrar sesión elimina el token. La etapa 5 añade coordinación de restauración y limpieza de navegación desde presentación, sin duplicar esta persistencia.
 
 El archivo de sesión se excluye de Auto Backup, cloud-backup y device-transfer. No hay logs HTTP de cuerpos, contraseñas ni tokens. El almacenamiento es SharedPreferences privado según el requisito académico, sin añadir un mecanismo de cifrado distinto.
 
@@ -54,7 +56,7 @@ AuthInterceptor lee SessionStorage y agrega Bearer solo en las rutas de recetas.
 
 RicettaApplication, registrada en Manifest, mantiene un único AppContainer lazy. El contenedor reutiliza un OkHttpClient, un Retrofit, SessionStorage y repositorios; los expone mediante interfaces. La creación diferida evita construir red o cargar preferencias durante la pantalla temporal.
 
-Los futuros ViewModels recibirán interfaces por constructor y se crearán con `viewModelFactory { initializer { ... } }`. No se agrega una Factory sin ViewModel funcional. No hay frameworks automáticos de DI ni acceso global indiscriminado a dependencias.
+En la etapa 4 se prepararon interfaces para los futuros ViewModels, sin crear factories artificiales. La etapa 5 incorpora LoginViewModel, RegisterViewModel y SessionViewModel por constructor y los crea con `viewModelFactory { initializer { ... } }` mediante AuthViewModelFactories. No hay frameworks automáticos de DI ni acceso global indiscriminado a dependencias.
 
 ## BASE_URL y transporte
 
@@ -104,4 +106,4 @@ La suite pytest de la etapa 3 tiene evidencia previa de 90 aprobadas; no se cuen
 
 ## Pendientes
 
-PDF oficiales ausentes; se usan los requisitos transcritos. Registro del dominio con el docente pendiente. Figma, validaciones de formularios en ViewModels, StateFlow, navegación protegida y retroalimentación visual se implementarán después. Ningún criterio C1–C5 se declara LOGRADO por esta infraestructura.
+PDF oficiales ausentes; se usan los requisitos transcritos. Registro del dominio con el docente pendiente. La etapa 5 incorpora Login/Registro desde los SVG entregados, validaciones en ViewModels, StateFlow y navegación de sesión; su verificación final está en [Autenticación MVVM](authentication.md). Home, detalle y CRUD visual siguen pendientes. Ningún criterio C1–C5 se declara LOGRADO por esta infraestructura.
