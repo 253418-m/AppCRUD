@@ -15,9 +15,9 @@ class AuthInterceptorTest {
             network.respond(RECIPE_JSON)
             network.recetasApi.obtenerReceta(1)
             network.respond(RECIPE_JSON, 201)
-            network.recetasApi.crearReceta(GuardarRecetaDto("Pasta", 2, 25, "FACIL", true))
+            network.recetasApi.crearReceta(GuardarRecetaDto("Pasta", 2, 25, "FACIL", true, "Tomate", "Cocinar"))
             network.respond(RECIPE_JSON)
-            network.recetasApi.actualizarReceta(1, GuardarRecetaDto("Pasta", 2, 25, "FACIL", true))
+            network.recetasApi.actualizarReceta(1, GuardarRecetaDto("Pasta", 2, 25, "FACIL", true, "Tomate", "Cocinar"))
             network.respond("", 204)
             network.recetasApi.eliminarReceta(1)
             repeat(5) {

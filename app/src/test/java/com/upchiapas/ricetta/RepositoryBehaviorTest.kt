@@ -72,8 +72,10 @@ class RepositoryBehaviorTest {
     @Test fun repositoryMapsEveryRecipeOperationToDomain() = runTest {
         NetworkFixture(FakeSessionStorage("test-token")).use { network ->
             val repository: RecipeRepository = RecipeRepositoryImpl(network.recetasApi)
-            val expected = Receta(1, "Pasta", 2, 25, Dificultad.FACIL, true)
-            val body = GuardarReceta("Pasta", 2, 25, Dificultad.FACIL, true)
+            val expected = Receta(1, "Pasta", 2, 25, Dificultad.FACIL, true,
+                "Tomate\nCebolla", "Lavar\nCocinar")
+            val body = GuardarReceta("Pasta", 2, 25, Dificultad.FACIL, true,
+                "Tomate\nCebolla", "Lavar\nCocinar")
             network.respond("[$RECIPE_JSON]")
             assertEquals(AppResult.Success(listOf(expected)), repository.obtenerRecetas())
             network.respond(RECIPE_JSON)

@@ -20,7 +20,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.upchiapas.ricetta.domain.model.Usuario
+import com.upchiapas.ricetta.domain.model.Receta
+import com.upchiapas.ricetta.domain.model.GuardarReceta
 import com.upchiapas.ricetta.domain.repository.AuthRepository
+import com.upchiapas.ricetta.domain.repository.RecipeRepository
 import com.upchiapas.ricetta.domain.result.AppResult
 import com.upchiapas.ricetta.domain.result.DataError
 import com.upchiapas.ricetta.domain.session.SessionStorage
@@ -41,7 +44,7 @@ class AuthUiTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
     private fun launch(storage: UiSessionStorage = UiSessionStorage(), repository: UiAuthRepository = UiAuthRepository(storage)) {
-        compose.setContent { RicettaTheme { RicettaApp(repository, storage) } }
+        compose.setContent { RicettaTheme { RicettaApp(repository, storage, UiRecipeRepository()) } }
     }
 
     private fun waitFor(tag: String) {
@@ -81,7 +84,7 @@ class AuthUiTest {
         waitFor("register_screen")
         compose.onNodeWithTag("register_login").performScrollTo().performClick()
         waitFor("login_screen")
-        compose.onNodeWithTag("home_provisional").assertDoesNotExist()
+        compose.onNodeWithTag("recipe_home").assertDoesNotExist()
     }
 
     @Test fun invalidFormsShowFieldErrorsWithoutSendingRequests() {
@@ -152,7 +155,7 @@ class AuthUiTest {
     ) {
         // Usar el mismo callsite de composición antes/después de recreate conserva las
         // claves de rememberSaveable, igual que setContent dentro de onCreate en producción.
-        activity.setContent { RicettaTheme { RicettaApp(repository, storage) } }
+        activity.setContent { RicettaTheme { RicettaApp(repository, storage, UiRecipeRepository()) } }
     }
 
     private fun recreateTestHost(storage: UiSessionStorage, repository: UiAuthRepository) {
@@ -211,33 +214,33 @@ class AuthUiTest {
         waitFor("login_screen")
         loginFields()
         compose.onNodeWithTag("login_submit").performScrollTo().performClick()
-        waitFor("home_provisional")
+        waitFor("recipe_home")
         assertTrue(storage.active)
         compose.onNodeWithTag("login_screen").assertDoesNotExist()
-        compose.onNodeWithTag("home_logout").performClick()
+        compose.onNodeWithTag("recipe_logout").performClick()
         compose.onNodeWithTag("logout_dialog").assertIsDisplayed()
         compose.onNodeWithText("¿Cerrar sesión?").assertIsDisplayed()
         compose.onNodeWithTag("logout_cancel").performClick()
         compose.onNodeWithTag("logout_dialog").assertDoesNotExist()
-        compose.onNodeWithTag("home_provisional").assertIsDisplayed()
+        compose.onNodeWithTag("recipe_home").assertIsDisplayed()
         assertEquals(0, repository.logoutCalls.get())
         assertTrue(storage.active)
-        compose.onNodeWithTag("home_logout").performClick()
+        compose.onNodeWithTag("recipe_logout").performClick()
         compose.onNodeWithTag("logout_confirm").performClick()
         waitFor("login_screen")
         assertFalse(storage.active)
         assertEquals(1, repository.logoutCalls.get())
-        compose.onNodeWithTag("home_provisional").assertDoesNotExist()
+        compose.onNodeWithTag("recipe_home").assertDoesNotExist()
         Espresso.pressBackUnconditionally()
         if (compose.activityRule.scenario.state != Lifecycle.State.DESTROYED) {
-            compose.onNodeWithTag("home_provisional").assertDoesNotExist()
+            compose.onNodeWithTag("recipe_home").assertDoesNotExist()
         }
     }
 
     @Test fun storedSessionRestoresProtectedDestinationWithoutLogin() {
         val storage = UiSessionStorage(active = true)
         launch(storage)
-        waitFor("home_provisional")
+        waitFor("recipe_home")
         compose.onNodeWithTag("login_screen").assertDoesNotExist()
         compose.onNodeWithTag("register_screen").assertDoesNotExist()
     }
@@ -262,7 +265,7 @@ class AuthUiTest {
         repository.registerResult = AppResult.Success(UiAuthRepository.user)
         compose.onNodeWithTag("register_email").performScrollTo().performTextReplacement("otra@example.com")
         compose.onNodeWithTag("register_submit").performScrollTo().performClick()
-        waitFor("home_provisional")
+        waitFor("recipe_home")
         assertTrue(storage.active)
     }
 
@@ -278,7 +281,7 @@ class AuthUiTest {
         compose.onNodeWithTag("login_submit").assertIsNotEnabled()
         assertEquals(1, repository.loginCalls.get())
         response.complete(AppResult.Success(UiAuthRepository.user))
-        waitFor("home_provisional")
+        waitFor("recipe_home")
     }
 }
 
@@ -316,4 +319,12 @@ private class UiAuthRepository(private val storage: UiSessionStorage) : AuthRepo
     }
 
     companion object { val user = Usuario(1, "Ana", "ana@example.com") }
+}
+
+private class UiRecipeRepository : RecipeRepository {
+    override suspend fun obtenerRecetas(): AppResult<List<Receta>> = AppResult.Success(emptyList())
+    override suspend fun obtenerReceta(id: Int): AppResult<Receta> = AppResult.Failure(DataError.NotFound)
+    override suspend fun crearReceta(receta: GuardarReceta): AppResult<Receta> = error("No se usa en autenticación")
+    override suspend fun actualizarReceta(id: Int, receta: GuardarReceta): AppResult<Receta> = error("No se usa en autenticación")
+    override suspend fun eliminarReceta(id: Int): AppResult<Unit> = error("No se usa en autenticación")
 }

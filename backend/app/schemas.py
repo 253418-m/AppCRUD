@@ -53,6 +53,15 @@ class RecetaInput(BaseModel):
     tiempo_preparacion_min: EnteroPositivo = Field(alias="tiempoPreparacionMin")
     dificultad: Literal["FACIL", "MEDIA", "DIFICIL"]
     es_vegetariana: StrictBool = Field(alias="esVegetariana")
+    ingredientes: str = Field(min_length=1, max_length=20000)
+    preparacion: str = Field(min_length=1, max_length=20000)
+
+    @field_validator("ingredientes", "preparacion")
+    @classmethod
+    def texto_no_vacio(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("El texto no puede estar vacío")
+        return value
 
 
 class RecetaOutput(BaseModel):
@@ -63,3 +72,5 @@ class RecetaOutput(BaseModel):
     tiempo_preparacion_min: int = Field(serialization_alias="tiempoPreparacionMin")
     dificultad: Literal["FACIL", "MEDIA", "DIFICIL"]
     es_vegetariana: bool = Field(serialization_alias="esVegetariana")
+    ingredientes: str | None
+    preparacion: str | None

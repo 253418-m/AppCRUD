@@ -16,7 +16,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 internal const val RECIPE_JSON =
-    """{"id":1,"nombre":"Pasta","porciones":2,"tiempoPreparacionMin":25,"dificultad":"FACIL","esVegetariana":true}"""
+    """{"id":1,"nombre":"Pasta","porciones":2,"tiempoPreparacionMin":25,"dificultad":"FACIL","esVegetariana":true,"ingredientes":"Tomate\nCebolla","preparacion":"Lavar\nCocinar"}"""
 internal const val AUTH_JSON =
     """{"accessToken":"test-token","tokenType":"bearer","usuario":{"id":1,"nombre":"Ana","correo":"ana@example.com"}}"""
 

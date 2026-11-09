@@ -85,7 +85,9 @@ class FastApiIntegrationTest {
                 porciones = 2,
                 tiempoPreparacionMin = 20,
                 dificultad = Dificultad.FACIL,
-                esVegetariana = true
+                esVegetariana = true,
+                ingredientes = "Agua\nSal",
+                preparacion = "Hervir\nServir"
             )
             val created = recipes.crearReceta(request).value()
             createdId = created.id
@@ -94,6 +96,8 @@ class FastApiIntegrationTest {
             assertEquals(request.tiempoPreparacionMin, created.tiempoPreparacionMin)
             assertEquals(request.dificultad, created.dificultad)
             assertTrue(created.esVegetariana)
+            assertEquals(request.ingredientes, created.ingredientes)
+            assertEquals(request.preparacion, created.preparacion)
             assertEquals(created, recipes.obtenerReceta(created.id).value())
             assertEquals(listOf(created), recipes.obtenerRecetas().value())
 
@@ -101,7 +105,9 @@ class FastApiIntegrationTest {
                 nombre = "Sopa de integración actualizada",
                 porciones = 4,
                 dificultad = Dificultad.MEDIA,
-                esVegetariana = false
+                esVegetariana = false,
+                ingredientes = "Agua\nSal\nTomate",
+                preparacion = "Hervir\nAñadir tomate\nServir"
             )
             val updated = recipes.actualizarReceta(created.id, update).value()
             assertEquals(created.id, updated.id)
@@ -109,6 +115,8 @@ class FastApiIntegrationTest {
             assertEquals(update.porciones, updated.porciones)
             assertEquals(update.dificultad, updated.dificultad)
             assertFalse(updated.esVegetariana)
+            assertEquals(update.ingredientes, updated.ingredientes)
+            assertEquals(update.preparacion, updated.preparacion)
             assertEquals(updated, recipes.obtenerReceta(created.id).value())
             assertEquals(listOf(updated), recipes.obtenerRecetas().value())
 

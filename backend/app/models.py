@@ -35,4 +35,6 @@ class Receta(Base):
     tiempo_preparacion_min: Mapped[int]
     dificultad: Mapped[str] = mapped_column(String(7))
     es_vegetariana: Mapped[bool] = mapped_column(Boolean(create_constraint=True))
+    ingredientes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    preparacion: Mapped[str | None] = mapped_column(Text, nullable=True)
     usuario: Mapped[Usuario] = relationship(back_populates="recetas")

@@ -22,15 +22,28 @@ class MapperTest {
         assertEquals(25, recipe.tiempoPreparacionMin)
         assertEquals(Dificultad.FACIL, recipe.dificultad)
         assertTrue(recipe.esVegetariana)
+        assertEquals("Tomate\nCebolla", recipe.ingredientes)
+        assertEquals("Lavar\nCocinar", recipe.preparacion)
         val request = GuardarReceta(
             recipe.nombre, recipe.porciones, recipe.tiempoPreparacionMin,
-            recipe.dificultad, recipe.esVegetariana
+            recipe.dificultad, recipe.esVegetariana,
+            requireNotNull(recipe.ingredientes), requireNotNull(recipe.preparacion)
         ).toDto()
         assertEquals("Pasta", request.nombre)
         assertEquals(2, request.porciones)
         assertEquals(25, request.tiempoPreparacionMin)
         assertEquals("FACIL", request.dificultad)
         assertTrue(request.esVegetariana)
+        assertEquals(recipe.ingredientes, request.ingredientes)
+        assertEquals(recipe.preparacion, request.preparacion)
+    }
+
+    @Test fun historicalRecipeKeepsMissingTextsExplicit() {
+        val body = RECIPE_JSON.replace("\"Tomate\\nCebolla\"", "null")
+            .replace("\"Lavar\\nCocinar\"", "null")
+        val recipe = testJson.decodeFromString<RecetaDto>(body).toDomain()
+        assertNull(recipe.ingredientes)
+        assertNull(recipe.preparacion)
     }
 
     @Test fun authMapsOnlyPublicUser() {

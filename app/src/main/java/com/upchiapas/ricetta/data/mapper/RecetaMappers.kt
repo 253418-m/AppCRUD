@@ -19,7 +19,9 @@ fun RecetaDto.toDomain(): Receta {
         porciones = porciones,
         tiempoPreparacionMin = tiempoPreparacionMin,
         dificultad = dificultadDominio,
-        esVegetariana = esVegetariana
+        esVegetariana = esVegetariana,
+        ingredientes = ingredientes,
+        preparacion = preparacion
     )
 }
 
@@ -28,5 +30,7 @@ fun GuardarReceta.toDto(): GuardarRecetaDto = GuardarRecetaDto(
     porciones = porciones,
     tiempoPreparacionMin = tiempoPreparacionMin,
     dificultad = dificultad.name,
-    esVegetariana = esVegetariana
+    esVegetariana = esVegetariana,
+    ingredientes = ingredientes,
+    preparacion = preparacion
 )

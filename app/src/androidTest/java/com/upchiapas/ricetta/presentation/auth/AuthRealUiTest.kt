@@ -14,6 +14,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.upchiapas.ricetta.core.network.AuthInterceptor
 import com.upchiapas.ricetta.data.remote.AuthApi
 import com.upchiapas.ricetta.data.repository.AuthRepositoryImpl
+import com.upchiapas.ricetta.data.remote.RecetasApi
+import com.upchiapas.ricetta.data.repository.RecipeRepositoryImpl
 import com.upchiapas.ricetta.data.session.SharedPreferencesSessionStorage
 import com.upchiapas.ricetta.presentation.RicettaApp
 import com.upchiapas.ricetta.presentation.theme.RicettaTheme
@@ -61,7 +63,8 @@ class AuthRealUiTest {
         val password = "SoloPruebasUi123!"
 
         try {
-            compose.setContent { RicettaTheme { RicettaApp(repository, storage) } }
+            compose.setContent { RicettaTheme { RicettaApp(repository, storage,
+                RecipeRepositoryImpl(retrofit.create(RecetasApi::class.java))) } }
             waitFor("login_screen")
             compose.onNodeWithTag("login_register").performScrollTo().performClick()
             waitFor("register_screen")
@@ -70,7 +73,7 @@ class AuthRealUiTest {
             input("register_password", password)
             input("register_confirm", password)
             compose.onNodeWithTag("register_submit").performScrollTo().performClick()
-            waitFor("home_provisional")
+            waitFor("recipe_home")
             assertTrue(runBlocking { storage.hasSession() })
             val reopened = SharedPreferencesSessionStorage(
                 context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
@@ -81,12 +84,12 @@ class AuthRealUiTest {
             compose.onNodeWithTag("login_screen").assertDoesNotExist()
             compose.onNodeWithTag("register_screen").assertDoesNotExist()
 
-            compose.onNodeWithTag("home_logout").performClick()
+            compose.onNodeWithTag("recipe_logout").performClick()
             compose.onNodeWithTag("logout_dialog").assertIsDisplayed()
             compose.onNodeWithTag("logout_cancel").performClick()
-            compose.onNodeWithTag("home_provisional").assertIsDisplayed()
+            compose.onNodeWithTag("recipe_home").assertIsDisplayed()
             assertTrue(runBlocking { storage.hasSession() })
-            compose.onNodeWithTag("home_logout").performClick()
+            compose.onNodeWithTag("recipe_logout").performClick()
             compose.onNodeWithTag("logout_confirm").performClick()
             waitFor("login_screen")
             assertFalse(runBlocking { storage.hasSession() })
@@ -94,13 +97,13 @@ class AuthRealUiTest {
             input("login_email", email)
             input("login_password", password)
             compose.onNodeWithTag("login_submit").performScrollTo().performClick()
-            waitFor("home_provisional")
+            waitFor("recipe_home")
             assertTrue(runBlocking { storage.hasSession() })
-            compose.onNodeWithTag("home_logout").performClick()
+            compose.onNodeWithTag("recipe_logout").performClick()
             compose.onNodeWithTag("logout_confirm").performClick()
             waitFor("login_screen")
             assertFalse(runBlocking { reopened.hasSession() })
-            compose.onNodeWithTag("home_provisional").assertDoesNotExist()
+            compose.onNodeWithTag("recipe_home").assertDoesNotExist()
         } finally {
             runBlocking { storage.clearToken() }
             context.deleteSharedPreferences(preferencesName)

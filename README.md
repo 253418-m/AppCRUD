@@ -11,6 +11,8 @@ Etapa 4: capa Android de dominio/datos, Retrofit 3, DTOs/mappers, repositorios, 
 
 Etapa 5: Login y Registro Compose basados en los SVG locales, ViewModels/UiState/StateFlow, factories manuales, restauración de sesión, navegación protegida y confirmación de logout. Aprobaron las pruebas instrumentadas, la comparación visual manual, la restauración de sesión tras reiniciar el proceso y la compilación/lint final. Consulte [autenticación, mockups y evidencias](docs/authentication.md). No se implementa todavía CRUD visual.
 
+Etapa 6: CRUD visual de recetas con Home, detalle y formulario compartido de creación/edición basado en SVG. El backend persiste ingredientes y preparación con migración incremental para datos anteriores. Consulte [contrato, arquitectura y verificaciones de recetas](docs/recipes.md).
+
 ## Tecnologías y ejecución
 Kotlin integrado en AGP 9.5.1; plugin Compose 2.2.10; BOM 2026.02.01; Navigation Compose 2.10.2; Gradle Wrapper 9.6.0. minSdk 26; compile/target 37. Java del terminal 21; daemon Gradle configurado para JDK 25.
 
@@ -22,7 +24,7 @@ Abrir en Android Studio, configurar SDK en `local.properties` (excluido de Git),
 ```
 
 ## Organización
-- `presentation`: Login/Registro, ViewModels, UiStates, factories, coordinación de sesión, navegación, componentes y tema.
+- `presentation`: Login/Registro y recetas, ViewModels, UiStates, factories, coordinación de sesión, navegación, componentes y tema.
 - `core`: red, manejo de errores y AppContainer.
 - `domain`: modelos, contratos de repositorios/sesión y resultados tipados.
 - `data`: servicios Retrofit, DTOs, mappers, sesión y repositorios concretos.
@@ -34,4 +36,4 @@ PDF oficiales ausentes: se usan los requisitos transcritos. Ningún criterio aca
 
 El registro previo del daemon Kotlin señala conflicto de caché incremental (`lookups.tab` ya registrado), sin evidencia suficiente para atribuirlo a memoria o JDK. No se reprodujo durante esta etapa; compilación Kotlin y verificaciones posteriores aprobaron sin modificar versiones ni configuración del daemon.
 
-La API REST y su contrato JSON están implementados en `backend/`. Se mantiene pendiente confirmar el registro del dominio con el docente. La infraestructura de integración Android está implementada en la etapa 4. La autenticación visual y sus ViewModels están implementados y verificados en la etapa 5; las diferencias visuales y límites de la evidencia se detallan en su documentación. La etapa 6, Home y detalle de recetas, requiere revisión y autorización expresa.
+La API REST y su contrato JSON están implementados en `backend/`. Se mantiene pendiente confirmar el registro del dominio con el docente. La infraestructura de integración Android está implementada en la etapa 4. La autenticación visual y sus ViewModels están implementados y verificados en la etapa 5; las diferencias visuales y límites de la evidencia se detallan en su documentación. La etapa 6 incorpora Home, detalle y formulario reutilizable de recetas. La migración SQLite conserva los registros antiguos con ingredientes/preparación ausentes de forma explícita. Sus resultados y límites se documentan en [Recetas](docs/recipes.md).

@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.engine import make_url
 
 
@@ -18,3 +18,12 @@ def create_database_engine(database_url: str):
         cursor.close()
 
     return engine
+
+
+def migrate_recetas(engine):
+    """Añade textos opcionales a recetas existentes sin alterar filas históricas."""
+    with engine.begin() as connection:
+        columns = {row[1] for row in connection.exec_driver_sql("PRAGMA table_info(recetas)")}
+        for name in ("ingredientes", "preparacion"):
+            if name not in columns:
+                connection.execute(text(f"ALTER TABLE recetas ADD COLUMN {name} TEXT"))

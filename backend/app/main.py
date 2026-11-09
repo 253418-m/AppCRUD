@@ -6,7 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.config import Settings
-from app.database import create_database_engine
+from app.database import create_database_engine, migrate_recetas
 from app.models import Base
 from app.routers import auth, recetas
 
@@ -20,6 +20,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         Base.metadata.create_all(engine)
+        migrate_recetas(engine)
         try:
             yield
         finally:

@@ -9,7 +9,9 @@ data class RecetaDto(
     val porciones: Int,
     val tiempoPreparacionMin: Int,
     val dificultad: String,
-    val esVegetariana: Boolean
+    val esVegetariana: Boolean,
+    val ingredientes: String?,
+    val preparacion: String?
 )
 
 @Serializable
@@ -18,5 +20,7 @@ data class GuardarRecetaDto(
     val porciones: Int,
     val tiempoPreparacionMin: Int,
     val dificultad: String,
-    val esVegetariana: Boolean
+    val esVegetariana: Boolean,
+    val ingredientes: String,
+    val preparacion: String
 )

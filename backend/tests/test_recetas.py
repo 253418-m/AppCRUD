@@ -8,7 +8,8 @@ from app.models import Receta
 
 
 PUBLIC_FIELDS = {
-    "id", "nombre", "porciones", "tiempoPreparacionMin", "dificultad", "esVegetariana"
+    "id", "nombre", "porciones", "tiempoPreparacionMin", "dificultad", "esVegetariana",
+    "ingredientes", "preparacion"
 }
 
 
@@ -42,6 +43,7 @@ def test_create_detail_update_and_delete_contract(client, auth, recipe):
     updated_payload = {
         "nombre": "  Sopa de pollo  ", "porciones": 4, "tiempoPreparacionMin": 45,
         "dificultad": "MEDIA", "esVegetariana": False,
+        "ingredientes": "Pollo\nAgua", "preparacion": "Hervir\nServir",
     }
     updated = client.put(f"/recetas/{recipe_id}", headers=auth, json=updated_payload)
     assert updated.status_code == 200
@@ -82,6 +84,10 @@ def test_create_detail_update_and_delete_contract(client, auth, recipe):
         {"id": 888},
         {"usuario_id": 888},
         {"usuarioId": 888},
+        {"ingredientes": ""},
+        {"ingredientes": "   "},
+        {"preparacion": ""},
+        {"preparacion": "\n"},
     ],
 )
 def test_create_and_update_validate_without_mutating(client, auth, recipe, changes):
@@ -93,7 +99,8 @@ def test_create_and_update_validate_without_mutating(client, auth, recipe, chang
 
 
 @pytest.mark.parametrize(
-    "field", ["nombre", "porciones", "tiempoPreparacionMin", "dificultad", "esVegetariana"]
+    "field", ["nombre", "porciones", "tiempoPreparacionMin", "dificultad", "esVegetariana",
+              "ingredientes", "preparacion"]
 )
 def test_create_and_put_require_all_editable_fields(client, auth, recipe, field):
     created = create_recipe(client, auth, recipe)

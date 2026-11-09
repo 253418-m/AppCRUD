@@ -12,7 +12,9 @@ data class Receta(
     val porciones: Int,
     val tiempoPreparacionMin: Int,
     val dificultad: Dificultad,
-    val esVegetariana: Boolean
+    val esVegetariana: Boolean,
+    val ingredientes: String?,
+    val preparacion: String?
 )
 
 data class GuardarReceta(
@@ -20,5 +22,7 @@ data class GuardarReceta(
     val porciones: Int,
     val tiempoPreparacionMin: Int,
     val dificultad: Dificultad,
-    val esVegetariana: Boolean
+    val esVegetariana: Boolean,
+    val ingredientes: String,
+    val preparacion: String
 )

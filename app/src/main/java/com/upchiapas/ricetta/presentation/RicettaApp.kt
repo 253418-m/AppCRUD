@@ -7,12 +7,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.upchiapas.ricetta.domain.repository.AuthRepository
+import com.upchiapas.ricetta.domain.repository.RecipeRepository
+import com.upchiapas.ricetta.domain.result.DataError
 import com.upchiapas.ricetta.domain.session.SessionStorage
 import com.upchiapas.ricetta.presentation.auth.AuthViewModelFactories
 import com.upchiapas.ricetta.presentation.auth.components.LogoutConfirmation
@@ -20,11 +26,16 @@ import com.upchiapas.ricetta.presentation.auth.login.LoginScreen
 import com.upchiapas.ricetta.presentation.auth.login.LoginViewModel
 import com.upchiapas.ricetta.presentation.auth.register.RegisterScreen
 import com.upchiapas.ricetta.presentation.auth.register.RegisterViewModel
+import com.upchiapas.ricetta.presentation.recipe.*
 import com.upchiapas.ricetta.presentation.session.SessionPhase
 import com.upchiapas.ricetta.presentation.session.SessionViewModel
 
 @Composable
-fun RicettaApp(authRepository: AuthRepository, sessionStorage: SessionStorage) {
+fun RicettaApp(
+    authRepository: AuthRepository,
+    sessionStorage: SessionStorage,
+    recipeRepository: RecipeRepository,
+) {
     val session: SessionViewModel = viewModel(
         factory = remember(authRepository, sessionStorage) {
             AuthViewModelFactories.session(authRepository, sessionStorage)
@@ -39,9 +50,9 @@ fun RicettaApp(authRepository: AuthRepository, sessionStorage: SessionStorage) {
 
     LaunchedEffect(sessionState.phase) {
         val current = navController.currentDestination?.route
-        val target = if (sessionState.phase == SessionPhase.SignedIn) "home_provisional" else "login"
+        val target = if (sessionState.phase == SessionPhase.SignedIn) "home" else "login"
         val alreadyInFlow = if (sessionState.phase == SessionPhase.SignedIn) {
-            current == "home_provisional"
+            current == "home" || current?.startsWith("recipe_") == true
         } else current == "login" || current == "register"
         if (!alreadyInFlow) {
             navController.navigate(target) {
@@ -73,10 +84,39 @@ fun RicettaApp(authRepository: AuthRepository, sessionStorage: SessionStorage) {
                 }
             }
         }
-        composable("home_provisional") {
+        composable("home") { entry ->
             if (sessionState.phase == SessionPhase.SignedIn) {
-                ProvisionalHome(session::requestLogout,
-                    if (sessionState.showLogoutDialog) null else sessionState.errorMessage)
+                val model: RecipeListViewModel = viewModel(
+                    viewModelStoreOwner = entry,
+                    factory = remember(recipeRepository) { RecipeViewModelFactories.list(recipeRepository) }
+                )
+                val state by model.state.collectAsStateWithLifecycle()
+                val feedback by entry.savedStateHandle.getStateFlow("feedback", "")
+                    .collectAsStateWithLifecycle()
+                DisposableEffect(entry.lifecycle) {
+                    val observer = LifecycleEventObserver { _, event ->
+                        if (event == Lifecycle.Event.ON_RESUME) model.refresh()
+                    }
+                    entry.lifecycle.addObserver(observer)
+                    onDispose { entry.lifecycle.removeObserver(observer) }
+                }
+                LaunchedEffect(state.error) {
+                    if (state.error == DataError.Unauthorized)
+                        session.onProtectedError(DataError.Unauthorized)
+                }
+                LaunchedEffect(feedback) {
+                    if (feedback.isNotEmpty()) {
+                        kotlinx.coroutines.delay(3500)
+                        entry.savedStateHandle["feedback"] = ""
+                    }
+                }
+                RecipeHomeScreen(state,
+                    onOpen = { navController.navigate("recipe_detail/$it") },
+                    onCreate = { navController.navigate("recipe_create") },
+                    onLogout = session::requestLogout,
+                    onRetry = model::refresh,
+                    feedback = feedback.ifEmpty { null },
+                )
                 if (sessionState.showLogoutDialog) {
                     LogoutConfirmation(
                         isLoading = sessionState.isLoggingOut,
@@ -87,7 +127,113 @@ fun RicettaApp(authRepository: AuthRepository, sessionStorage: SessionStorage) {
                 }
             }
         }
+        composable(
+            "recipe_detail/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.IntType })
+        ) { entry ->
+            if (sessionState.phase == SessionPhase.SignedIn) {
+                val id = requireNotNull(entry.arguments).getInt("id")
+                val model: RecipeDetailViewModel = viewModel(
+                    viewModelStoreOwner = entry,
+                    factory = remember(id, recipeRepository) {
+                        RecipeViewModelFactories.detail(id, recipeRepository)
+                    }
+                )
+                val state by model.state.collectAsStateWithLifecycle()
+                val feedback by entry.savedStateHandle.getStateFlow("feedback", "")
+                    .collectAsStateWithLifecycle()
+                DisposableEffect(entry.lifecycle) {
+                    val observer = LifecycleEventObserver { _, event ->
+                        if (event == Lifecycle.Event.ON_RESUME) model.refresh()
+                    }
+                    entry.lifecycle.addObserver(observer)
+                    onDispose { entry.lifecycle.removeObserver(observer) }
+                }
+                LaunchedEffect(feedback) {
+                    if (feedback.isNotEmpty()) {
+                        kotlinx.coroutines.delay(3500)
+                        entry.savedStateHandle["feedback"] = ""
+                    }
+                }
+                LaunchedEffect(state.error, state.deleteError) {
+                    if (state.error == DataError.Unauthorized ||
+                        state.deleteError == DataError.Unauthorized)
+                        session.onProtectedError(DataError.Unauthorized)
+                }
+                LaunchedEffect(state.deleted) {
+                    if (state.deleted) {
+                        navController.getBackStackEntry("home").savedStateHandle["feedback"] =
+                            "Receta eliminada correctamente"
+                        navController.popBackStack("home", inclusive = false)
+                    }
+                }
+                RecipeDetailScreen(state,
+                    onBack = { navController.popBackStack() },
+                    onEdit = { navController.navigate("recipe_edit/$id") },
+                    onDelete = model::requestDelete,
+                    onRetry = model::refresh,
+                    feedback = feedback.ifEmpty { null },
+                )
+                if (state.showDeleteDialog)
+                    RecipeDeleteDialog(state, model::cancelDelete, model::confirmDelete)
+            }
+        }
+        composable("recipe_create") { entry ->
+            if (sessionState.phase == SessionPhase.SignedIn) {
+                RecipeFormRoute(
+                    id = null, repository = recipeRepository,
+                    onUnauthorized = { session.onProtectedError(DataError.Unauthorized) },
+                    onCancel = { navController.popBackStack() },
+                    onSaved = { _ ->
+                        navController.getBackStackEntry("home").savedStateHandle["feedback"] =
+                            "Receta creada correctamente"
+                        navController.popBackStack("home", inclusive = false)
+                    }
+                )
+            }
+        }
+        composable(
+            "recipe_edit/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.IntType })
+        ) { entry ->
+            if (sessionState.phase == SessionPhase.SignedIn) {
+                val id = requireNotNull(entry.arguments).getInt("id")
+                RecipeFormRoute(
+                    id = id, repository = recipeRepository,
+                    onUnauthorized = { session.onProtectedError(DataError.Unauthorized) },
+                    onCancel = { navController.popBackStack() },
+                    onSaved = {
+                        navController.getBackStackEntry("recipe_detail/{id}")
+                            .savedStateHandle["feedback"] = "Receta actualizada correctamente"
+                        navController.popBackStack()
+                    }
+                )
+            }
+        }
     }
+}
+
+@Composable
+private fun RecipeFormRoute(
+    id: Int?, repository: RecipeRepository,
+    onUnauthorized: () -> Unit, onCancel: () -> Unit,
+    onSaved: (com.upchiapas.ricetta.domain.model.Receta) -> Unit,
+) {
+    val model: RecipeFormViewModel = viewModel(
+        key = "recipe_form_${id ?: "create"}",
+        factory = remember(id, repository) { RecipeViewModelFactories.form(id, repository) }
+    )
+    val state by model.state.collectAsStateWithLifecycle()
+    LaunchedEffect(state.error) {
+        if (state.error == DataError.Unauthorized) onUnauthorized()
+    }
+    LaunchedEffect(state.saved) { state.saved?.let(onSaved) }
+    RecipeFormScreen(state, editing = id != null,
+        onNombre = model::onNombre, onPorciones = model::onPorciones,
+        onTiempo = model::onTiempo, onDificultad = model::onDificultad,
+        onVegetariana = model::onVegetariana, onIngredientes = model::onIngredientes,
+        onPreparacion = model::onPreparacion, onSave = model::save,
+        onCancel = onCancel, onRetry = model::load)
 }
 
 @Composable
@@ -121,27 +267,6 @@ private fun StartupScreen(loading: Boolean, error: String?, onRetry: () -> Unit)
             if (error != null) {
                 Text(error)
                 TextButton(onClick = onRetry) { Text("Reintentar") }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProvisionalHome(onLogout: () -> Unit, error: String?) {
-    Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).padding(24.dp).testTag("home_provisional"),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center) {
-            Text("Ricetta", style = MaterialTheme.typography.headlineMedium)
-            Spacer(Modifier.height(16.dp))
-            Text("Sesión iniciada")
-            Spacer(Modifier.height(24.dp))
-            Button(onClick = onLogout, modifier = Modifier.testTag("home_logout")) {
-                Text("Cerrar sesión")
-            }
-            if (error != null) {
-                Spacer(Modifier.height(16.dp))
-                Text(error, color = MaterialTheme.colorScheme.error)
             }
         }
     }

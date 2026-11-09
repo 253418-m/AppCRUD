@@ -50,4 +50,6 @@ def recipe():
         "tiempoPreparacionMin": 25,
         "dificultad": "FACIL",
         "esVegetariana": True,
+        "ingredientes": "Tomate\nCebolla",
+        "preparacion": "Lavar verduras\nCocinar",
     }

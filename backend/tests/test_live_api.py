@@ -58,6 +58,7 @@ def test_real_http_and_persistence_after_process_restart(tmp_path):
     recipe = {
         "nombre": "Sopa HTTP", "porciones": 2, "tiempoPreparacionMin": 20,
         "dificultad": "FACIL", "esVegetariana": True,
+        "ingredientes": "Agua\nSal", "preparacion": "Hervir\nServir",
     }
     with running_server(env, port, tmp_path / "first.log") as client:
         assert client.get("/docs").status_code == 200

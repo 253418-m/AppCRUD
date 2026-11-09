@@ -14,7 +14,8 @@ class MainActivity : ComponentActivity() {
         val container = (application as RicettaApplication).appContainer
         setContent {
             RicettaTheme {
-                RicettaApp(container.authRepository, container.sessionStorage)
+                RicettaApp(container.authRepository, container.sessionStorage,
+                    container.recipeRepository)
             }
         }
     }

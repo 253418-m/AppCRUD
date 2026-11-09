@@ -26,9 +26,10 @@ class RetrofitContractTest {
 
     @Test fun createAndUpdateSendOnlyEditableCamelCaseFields() = runTest {
         NetworkFixture().use { network ->
-            val body = GuardarRecetaDto("Pasta", 2, 25, "FACIL", true)
+            val body = GuardarRecetaDto("Pasta", 2, 25, "FACIL", true,
+                "Tomate\nCebolla", "Lavar\nCocinar")
             val expected = testJson.parseToJsonElement(
-                """{"nombre":"Pasta","porciones":2,"tiempoPreparacionMin":25,"dificultad":"FACIL","esVegetariana":true}"""
+                """{"nombre":"Pasta","porciones":2,"tiempoPreparacionMin":25,"dificultad":"FACIL","esVegetariana":true,"ingredientes":"Tomate\nCebolla","preparacion":"Lavar\nCocinar"}"""
             )
             network.respond(RECIPE_JSON, 201)
             assertEquals(1, network.recetasApi.crearReceta(body).id)
