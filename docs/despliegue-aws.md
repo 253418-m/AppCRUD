@@ -1,65 +1,97 @@
-# Preparación para desplegar Ricetta en AWS
+# Preparación de despliegue en AWS EC2
 
-**Estado:** propuesta técnica únicamente. No se han creado recursos, configurado una cuenta, comprado un dominio ni desplegado la API.
+**Estado:** plan técnico solamente. No se creó infraestructura, no se desplegó FastAPI, no se eligieron región/tipo de instancia y no se consumió el crédito académico de USD 50. Permisos y disponibilidad dependen del laboratorio universitario.
 
 ## Arquitectura propuesta
 
-- Instancia Linux pequeña de Amazon Lightsail para una demostración académica.
-- FastAPI/Uvicorn escuchando únicamente en 127.0.0.1:8000.
-- Caddy o Nginx como proxy inverso; solo se publican HTTP (80, para redirección/ACME si se usa) y HTTPS (443). El puerto interno de Uvicorn permanece cerrado al exterior.
-- IP estática asociada a la instancia y un dominio propio con DNS apuntando a esa IP.
-- TLS válido administrado por Caddy o configurado en el proxy. La app release consumirá únicamente la URL HTTPS.
-- SQLite en disco persistente de la instancia, con permisos restringidos, respaldo periódico fuera de la instancia y una prueba documentada de recuperación.
+Teléfono Android → HTTPS público → EC2 Linux → Caddy (:443; :80 para redirección/ACME) → Uvicorn en 127.0.0.1:8000 → FastAPI → SQLite sobre volumen EBS persistente.
 
-Esta propuesta es adecuada para una demo de bajo tráfico. SQLite en un solo servidor no ofrece alta disponibilidad ni es una solución multiinstancia. Si el uso exige escalabilidad, recuperación avanzada o concurrencia sostenida, revisar una base administrada antes de ampliar el despliegue.
+Una instancia basta para una demostración de bajo tráfico. No se propone RDS, Load Balancer ni microservicios. No publicar el puerto 8000. Caddy necesita DNS real bajo control del usuario y conectividad pública para emitir/renovar TLS; no usar dominio inventado ni certificado autofirmado como solución final.
 
-## Requisitos previos
+## Requisitos previos y restricciones por confirmar
 
-- Cuenta AWS habilitada, MFA y método de pago; revisar presupuesto y alertas de facturación.
-- Región y plan Linux elegidos según disponibilidad, memoria, transferencia y latencia.
-- Dominio registrado y control de su DNS para validar TLS.
-- Clave SSH protegida fuera del repositorio.
-- Revisión de variables requeridas por backend/app/config.py, dependencias fijadas en backend/requirements.txt y ruta SQLite persistente.
-- Una copia de seguridad de cualquier base de datos que se vaya a conservar. No copiar ni subir la base local de desarrollo sin una decisión explícita sobre sus datos.
+Antes de iniciar sesión o gastar crédito, confirmar con el administrador del laboratorio: duración/suspensión de sesiones, regiones habilitadas, tipos de instancia, cuotas, acceso SSH, IPv4 pública/Elastic IP, DNS, Security Groups, snapshots, almacenamiento, transferencia, presupuestos y qué ocurre con recursos al acabar el laboratorio. No asumir que el crédito cubre cada servicio.
 
-## Configuración segura prevista
+Elegir tipo y región tras revisar permisos y cotizar. Mantener la llave SSH fuera de Git. Usar MFA/alertas solo si el entorno lo permite.
 
-- Generar un JWT_SECRET_KEY aleatorio y privado (al menos 32 bytes según la configuración actual); guardarlo en un archivo de entorno con permisos de propietario o en un gestor de secretos. Nunca incluirlo en Git, comandos compartidos, APK o logs.
-- Configurar DATABASE_URL con una ruta SQLite absoluta persistente y ACCESS_TOKEN_EXPIRE_MINUTES según la política acordada.
-- Ejecutar Uvicorn como usuario de servicio sin privilegios mediante systemd. Guardar código y entorno virtual bajo un directorio de servicio con permisos mínimos.
-- Configurar el firewall de Lightsail y el firewall del sistema operativo con SSH limitado a IPs administrativas cuando sea viable, y 80/443 públicos. No abrir 8000 ni permitir acceso HTTP directo a SQLite.
-- El proxy debe terminar TLS con certificado válido y reenviar a Uvicorn por loopback. No desactivar validación TLS en Android.
-- Mantener secretos, archivos .env, claves SSH, keystores Android y bases SQLite excluidos del repositorio y de artefactos públicos.
-- Activar monitoreo de uso/costos y copias de seguridad antes de guardar información real.
+## Backend Linux y configuración segura
 
-## Pasos para una etapa futura
+Las dependencias están fijadas en backend/requirements.txt y backend/app/config.py lee JWT_SECRET_KEY (mínimo 32 bytes), DATABASE_URL y ACCESS_TOKEN_EXPIRE_MINUTES. Las versiones se verificaron en Python 3.13/Windows; instalación efectiva en Linux no se ha probado y debe validarse en el sistema elegido. El backend usa SQLite y tiene migración incremental. No borrar ni sustituir la base durante actualización.
 
-1. Confirmar presupuesto, región, plan, titular de la cuenta, dominio y política de conservación de datos.
-2. Crear la instancia Linux y asociar una IP estática. Crear el registro DNS para el dominio elegido.
-3. Preparar el servidor, usuario de servicio, Python y entorno virtual; instalar únicamente las dependencias fijadas por el backend.
-4. Configurar variables privadas y una base de datos nueva o migrada desde una copia previamente aprobada. Ejecutar la migración y validar integridad sin borrar tablas.
-5. Instalar y probar el servicio systemd de FastAPI en loopback.
-6. Configurar Caddy o Nginx, emitir/renovar TLS, abrir solo los puertos necesarios y verificar desde fuera que HTTP redirige a HTTPS y que 8000 no responde públicamente.
-7. Crear y probar respaldos de SQLite; ensayar una restauración en una ubicación separada.
-8. Configurar ricetta.releaseBaseUrl como URL HTTPS real durante la compilación release. No modificar la URL debug local ni reemplazarla por un dominio ficticio.
-9. Generar el APK firmado desde Android Studio con un keystore guardado fuera del repositorio. Compartir APK y credenciales por canales separados. No publicar el keystore ni las contraseñas de firma.
-10. Instalar en un teléfono físico y probar registro nuevo, conflicto de correo, login, persistencia, CRUD, logout, certificado TLS y conectividad por Wi‑Fi y datos móviles.
-11. Documentar monitoreo, rotación de secretos, expiración de tokens, actualización y recuperación.
+Preparación futura, ajustando distribución y rutas:
 
-## Verificaciones antes de autorizar costos o publicación
+1. Instalar Python compatible, venv y utilidades desde repositorios oficiales.
+2. Crear usuario de servicio sin privilegios, por ejemplo ricetta; código en /opt/ricetta/backend, venv en /opt/ricetta/.venv.
+3. Instalar requirements.txt y ejecutar pytest con una base temporal.
+4. Montar EBS de datos en /var/lib/ricetta y asignar propietario/permisos mínimos.
+5. Crear /etc/ricetta/ricetta.env con permisos 600, propietario root y grupo del servicio. No versionar:
 
-- OpenAPI accesible mediante HTTPS y contrato de autenticación/recetas sin cambios accidentales.
-- Registro/login y CRUD probados en base de prueba; aislamiento por usuario y códigos HTTP correctos.
-- Certificado vigente y validado por Android; no hay cleartext HTTP en release.
-- Uvicorn no es accesible directamente desde Internet.
-- SSH restringido, secretos fuera de Git, sistema actualizado y respaldos restaurables.
-- Prueba desde un teléfono fuera de la red del desarrollador, con ADB desconectado.
-- Revisar estimación mensual y límites vigentes en la región elegida: instancia, transferencia excedente, almacenamiento/snapshots, IP, DNS/dominio e impuestos. No asumir que una oferta gratuita aplica ni que cubre todos los componentes.
+       JWT_SECRET_KEY=<secreto aleatorio privado de al menos 32 bytes>
+       DATABASE_URL=sqlite:////var/lib/ricetta/ricetta.db
+       ACCESS_TOKEN_EXPIRE_MINUTES=60
 
-## Costos a revisar
+   El proceso puede recibir variables desde systemd; load_dotenv no reemplaza variables ya presentes.
+6. Ejecutar migración incremental sobre la base destinada a la demo y verificar integridad. No copiar la DB local automáticamente.
+7. Preparar unidad systemd parametrizada usando la factory real create_app de app.main:
 
-Lightsail ofrece planes con cargo por hora hasta un máximo mensual y cuotas de transferencia; precios, paquetes, exceso de transferencia y ofertas dependen de región y fecha. Consultar la tabla vigente antes de crear cualquier recurso: [planes de instancias Lightsail](https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-bundles.html), [precios de Lightsail](https://aws.amazon.com/lightsail/pricing/) y [FAQ de facturación](https://aws.amazon.com/lightsail/faq/). Una IP estática puede tener cargo si queda desvinculada; revisar el importe actual. Sumar dominio/DNS, snapshots y posibles impuestos. Establecer alertas de presupuesto, recordando que pueden tardar y no necesariamente detienen recursos.
+       [Unit]
+       Description=API Ricetta (FastAPI)
+       After=network-online.target
+       Wants=network-online.target
 
-## Pendiente de autorización
+       [Service]
+       User=ricetta
+       Group=ricetta
+       WorkingDirectory=/opt/ricetta/backend
+       EnvironmentFile=/etc/ricetta/ricetta.env
+       ExecStart=/opt/ricetta/.venv/bin/uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
+       Restart=on-failure
+       RestartSec=3
+       NoNewPrivileges=true
+       PrivateTmp=true
+       ProtectSystem=strict
+       ProtectHome=true
+       ReadWritePaths=/var/lib/ricetta
 
-No se debe crear infraestructura, activar facturación, comprar dominio, cargar credenciales, desplegar FastAPI ni emitir un APK release hasta contar con autorización expresa y decisiones sobre región, presupuesto, dominio, datos y firma.
+       [Install]
+       WantedBy=multi-user.target
+
+   Revisar rutas/permisos, después systemctl daemon-reload, habilitar e iniciar. Ver: systemctl status ricetta; journalctl -u ricetta -f.
+8. Actualizar código en ruta separada, conservar volumen y hacer respaldo previo. No borrar /var/lib/ricetta.
+
+## Caddy, HTTPS y Security Groups
+
+Cuando haya un dominio real apuntado a la IP pública:
+
+       api.<dominio-controlado> {
+           reverse_proxy 127.0.0.1:8000
+       }
+
+Caddy puede gestionar TLS si DNS y puertos son accesibles. Security Group: SSH 22 limitado al CIDR administrativo; 80 y 443 públicos si se necesitan para ACME/redirección; no 8000. Revisar firewall de Linux también. No publicar SQLite, .env, directorios internos ni credenciales. Android debe verificar TLS normalmente.
+
+La IPv4 efímera puede cambiar al detener/iniciar EC2 y romper DNS. Confirmar si el laboratorio permite Elastic IP y sus cargos/restricciones. La renovación automática requiere servicio y DNS disponibles.
+
+## EBS, SQLite y recuperación
+
+Guardar DB en EBS montado en /var/lib/ricetta, fuera del directorio reemplazable de código, con permisos solo al usuario de servicio. EBS persiste tras reinicios pero no es respaldo: eliminar volumen o terminar una instancia con DeleteOnTermination activo puede perder datos.
+
+Respaldar con API SQLite (por ejemplo, sqlite3.Connection.backup) o detener brevemente FastAPI antes de copiar; no confiar en copiar un archivo activo como único respaldo. Mantener copia protegida fuera del volumen y probar restauración en ruta separada. Confirmar usuarios/recetas tras reiniciar FastAPI y EC2.
+
+## Costos y crédito de USD 50
+
+No fijar costo mensual sin región, tipo y horas de uso. Cotizar cómputo EC2 por tipo/región/tiempo, EBS por GB-mes, snapshots, IPv4 pública, transferencia saliente, DNS/dominio e impuestos. Detener EC2 deja de generar cargos de cómputo cuando llega a detenido, pero EBS y recursos asociados pueden seguir facturándose. En terminación, volúmenes preservados siguen cobrando; otros se borran según DeleteOnTermination. Confirmar las reglas del laboratorio. USD 50 es crédito del laboratorio, no garantía de costo cero.
+
+Revisar precios oficiales al elegir: EC2 [On-Demand](https://aws.amazon.com/ec2/pricing/on-demand/), [EBS](https://aws.amazon.com/ebs/pricing/), [IPv4/VPC](https://aws.amazon.com/vpc/pricing/) y [Calculadora AWS](https://calculator.aws/). AWS especifica que instancia detenida no genera cargo de cómputo pero sí se cobra almacenamiento EBS; precios y créditos dependen de región/condiciones. No seleccionar instancia por precio publicado de otra región.
+
+## Secuencia y verificaciones futuras
+
+1. Obtener autorización del usuario y del laboratorio; seleccionar región, AMI, tipo, almacenamiento, dominio y presupuesto.
+2. Cotizar duración prevista y configurar alerta/límite si está permitido.
+3. Crear EC2/EBS y reglas mínimas; documentar preservación/desasociación antes de terminar.
+4. Configurar Linux, usuario, venv, secretos privados, migración y systemd.
+5. Configurar DNS/Caddy; probar certificado, redirección HTTP→HTTPS y que 8000 no sea accesible desde Internet.
+6. Ejecutar pruebas backend/API aisladas y Android sobre URL HTTPS.
+7. Probar respaldo/restauración y persistencia tras reinicios.
+8. Solo con API HTTPS verificada, configurar ricetta.releaseBaseUrl=https://<dominio-real>/ y firmar APK.
+
+No iniciar sesión AWS automáticamente, crear EC2/EBS/Elastic IP/Security Groups/DNS, usar créditos, comprar dominio, desplegar API ni publicar secretos en esta etapa.

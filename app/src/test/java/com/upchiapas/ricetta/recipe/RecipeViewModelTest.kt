@@ -10,6 +10,9 @@ import com.upchiapas.ricetta.domain.result.DataError
 import com.upchiapas.ricetta.presentation.recipe.RecipeDetailViewModel
 import com.upchiapas.ricetta.presentation.recipe.RecipeFormViewModel
 import com.upchiapas.ricetta.presentation.recipe.RecipeListViewModel
+import com.upchiapas.ricetta.presentation.recipe.RecipeViewModelFactories
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -210,6 +213,32 @@ class RecipeViewModelTest {
         advanceUntilIdle()
         assertEquals(2, repo.createCalls)
         assertEquals(sample, vm.state.value.saved)
+    }
+
+    @Test fun recipeFactoriesCreateViewModelsWithTheProvidedRepositoryInterface() = runTest {
+        val repository = FakeRecipes()
+        val store = ViewModelStore()
+        try {
+            val list = ViewModelProvider(store, RecipeViewModelFactories.list(repository))
+                .get(RecipeListViewModel::class.java)
+            advanceUntilIdle()
+            assertEquals(1, repository.listCalls)
+            assertTrue(list.state.value.loaded)
+
+            val detail = ViewModelProvider(store, RecipeViewModelFactories.detail(7, repository))
+                .get(RecipeDetailViewModel::class.java)
+            advanceUntilIdle()
+            assertEquals(1, repository.getCalls)
+            assertEquals(sample, detail.state.value.recipe)
+
+            val form = ViewModelProvider(store, RecipeViewModelFactories.form(7, repository))
+                .get(RecipeFormViewModel::class.java)
+            advanceUntilIdle()
+            assertEquals(2, repository.getCalls)
+            assertEquals("Sopa", form.state.value.nombre)
+        } finally {
+            store.clear()
+        }
     }
 
     @Test fun savePreventsDuplicateRequestsWhileLoading() = runTest {
