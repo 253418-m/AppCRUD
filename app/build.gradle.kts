@@ -42,10 +42,13 @@ android {
         release {
             buildConfigField("String", "BASE_URL", baseUrlField(
                 providers.gradleProperty("ricetta.releaseBaseUrl").getOrElse(""), true))
+
+
             optimization {
-                enable = true
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
+                enable = false
             }
+
+
         }
     }
     compileOptions {
