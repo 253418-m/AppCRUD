@@ -87,6 +87,35 @@ class AuthUiTest {
         compose.onNodeWithTag("recipe_home").assertDoesNotExist()
     }
 
+    @Test fun emptyPasswordFieldsHaveNoPlaceholderAndVisibilityDoesNotInsertText() {
+        launch()
+        waitFor("login_screen")
+        compose.onNodeWithText("••••••••").assertDoesNotExist()
+        compose.onNodeWithTag("login_logo").assertExists()
+        compose.onNodeWithTag("login_toggle_password").performScrollTo().performClick()
+        assertEquals(
+            "",
+            compose.onNodeWithTag("login_password").fetchSemanticsNode()
+                .config[SemanticsProperties.EditableText].text
+        )
+        compose.onNodeWithTag("login_register").performScrollTo().performClick()
+        waitFor("register_screen")
+        compose.onNodeWithText("••••••••").assertDoesNotExist()
+        compose.onNodeWithTag("register_toggle_password").performScrollTo().performClick()
+        compose.onNodeWithTag("register_toggle_confirm").performScrollTo().performClick()
+        assertEquals(
+            "",
+            compose.onNodeWithTag("register_password").fetchSemanticsNode()
+                .config[SemanticsProperties.EditableText].text
+        )
+        assertEquals(
+            "",
+            compose.onNodeWithTag("register_confirm").fetchSemanticsNode()
+                .config[SemanticsProperties.EditableText].text
+        )
+        compose.onNodeWithText("Mínimo 8 caracteres").assertExists()
+    }
+
     @Test fun invalidFormsShowFieldErrorsWithoutSendingRequests() {
         val storage = UiSessionStorage()
         val repository = UiAuthRepository(storage)

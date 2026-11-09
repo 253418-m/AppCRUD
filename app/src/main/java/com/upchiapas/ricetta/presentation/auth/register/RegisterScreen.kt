@@ -71,14 +71,14 @@ fun RegisterScreen(
                             "register_email", state.correoError, enabled = !state.isLoading,
                             required = true, bordered = true, keyboardType = KeyboardType.Email)
                         Spacer(Modifier.height(14.dp))
-                        AuthField("Contraseña", state.password, onPasswordChange, "••••••••",
+                        AuthField("Contraseña", state.password, onPasswordChange, "",
                             "register_password", state.passwordError, enabled = !state.isLoading,
                             required = true, bordered = true, password = true,
                             passwordVisible = state.isPasswordVisible,
                             onToggleVisibility = onTogglePasswordVisibility, toggleTag = "register_toggle_password",
                             helper = "Mínimo 8 caracteres", keyboardType = KeyboardType.Password)
                         Spacer(Modifier.height(14.dp))
-                        AuthField("Confirmar contraseña", state.confirmPassword, onConfirmPasswordChange, "••••••••",
+                        AuthField("Confirmar contraseña", state.confirmPassword, onConfirmPasswordChange, "",
                             "register_confirm", state.confirmPasswordError, enabled = !state.isLoading,
                             required = true, bordered = true, password = true,
                             passwordVisible = state.isConfirmPasswordVisible,

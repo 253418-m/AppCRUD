@@ -19,7 +19,7 @@ La asignación de la clave no la imprime en la terminal. Guardar una clave propi
 
 Documentación: http://127.0.0.1:8000/docs y http://127.0.0.1:8000/openapi.json. Las rutas de autenticación reciben JSON, no formularios OAuth2. Swagger permite pegar un token con el botón Authorize (esquema HTTP Bearer).
 
-Para pruebas desde el emulador, iniciar con `--host 0.0.0.0` y usar `http://10.0.2.2:8000/` como base URL. Esto expone el puerto a la red local; habilitarlo solo durante el desarrollo. La configuración Android permite HTTP local solamente en debug; release requiere HTTPS.
+Para pruebas desde el emulador hay dos configuraciones válidas: iniciar Uvicorn con `--host 0.0.0.0` y compilar Android con `http://10.0.2.2:8000/`, o mantener el backend en `127.0.0.1` y compilar con `http://127.0.0.1:8000/` junto con el túnel `adb reverse tcp:8000 tcp:8000`. En la segunda opción, sin el túnel la dirección apunta al emulador y las llamadas de registro/login fallan como error de conexión. La propiedad local `ricetta.debugBaseUrl` controla la URL de compilación y no activa el túnel por sí sola. El script `scripts/verify-android-api.ps1 -UseAdbReverse` crea un túnel temporal con puerto y SQLite aislados para sus pruebas. La configuración Android permite HTTP local solamente en debug; release requiere HTTPS.
 
 ## Configuración
 

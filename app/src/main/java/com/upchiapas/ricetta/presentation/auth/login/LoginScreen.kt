@@ -69,7 +69,7 @@ fun LoginScreen(
                             Spacer(Modifier.height(16.dp))
                             AuthField(
                                 label = "Contraseña", value = state.password, onValueChange = onPasswordChange,
-                                placeholder = "••••••••", tag = "login_password", error = state.passwordError,
+                                placeholder = "", tag = "login_password", error = state.passwordError,
                                 enabled = !state.isLoading, leadingIcon = R.drawable.auth_lock,
                                 password = true, passwordVisible = state.isPasswordVisible,
                                 onToggleVisibility = onTogglePasswordVisibility, toggleTag = "login_toggle_password",
@@ -108,7 +108,18 @@ private fun LoginHeader() {
             Modifier.fillMaxWidth().padding(top = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Box(Modifier.size(64.dp).clip(RoundedCornerShape(16.dp)).background(AuthColors.Field.copy(alpha = .1f)))
+            Box(
+                Modifier.size(64.dp).clip(RoundedCornerShape(16.dp))
+                    .background(AuthColors.Field.copy(alpha = .1f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.auth_cutlery),
+                    contentDescription = "Utensilios de cocina",
+                    tint = AuthColors.Mint,
+                    modifier = Modifier.size(32.dp).testTag("login_logo"),
+                )
+            }
             Spacer(Modifier.height(14.dp))
             Text("RICETTA", color = AuthColors.Background, fontFamily = AuthFontFamily,
                 fontSize = 28.sp, lineHeight = 34.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)

@@ -102,7 +102,7 @@ fun AuthField(
                         Spacer(Modifier.width(12.dp))
                     }
                     Box(Modifier.weight(1f)) {
-                        if (value.isEmpty()) Text(
+                        if (value.isEmpty() && placeholder.isNotEmpty()) Text(
                             placeholder, color = if (bordered) AuthColors.Muted else AuthColors.Placeholder,
                             fontFamily = AuthFontFamily, fontSize = 14.sp, lineHeight = 20.sp
                         )
